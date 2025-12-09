@@ -93,18 +93,42 @@ export const EditPanel: React.FC<EditPanelProps> = ({ currentData, onUpdate, isO
 
   const handleSaveCloudConfig = () => {
     if (!cloudConfigInput.trim()) {
-        alert("Cole o JSON de configuração.");
+        alert("Cole o código de configuração.");
         return;
     }
+
+    let configString = cloudConfigInput.trim();
+    
+    // SMART PARSER: Tenta limpar o código JavaScript bruto para virar JSON válido
     try {
-        const config = JSON.parse(cloudConfigInput);
+        // 1. Remove 'const firebaseConfig =' e ';' se houver
+        if (configString.includes('=')) {
+            configString = configString.split('=')[1].trim();
+        }
+        if (configString.endsWith(';')) {
+            configString = configString.slice(0, -1).trim();
+        }
+
+        // 2. Corrige chaves sem aspas (ex: apiKey: "..." -> "apiKey": "...")
+        // Regex procura por palavras seguidas de dois pontos e coloca aspas nelas
+        configString = configString.replace(/(\w+)\s*:/g, '"$1":');
+
+        // 3. Troca aspas simples por duplas
+        configString = configString.replace(/'/g, '"');
+
+        // 4. Remove vírgulas sobrando no final de objetos (JSON não aceita trailing commas)
+        configString = configString.replace(/,\s*}/g, '}');
+
+        const config = JSON.parse(configString);
+        
         if (!config.apiKey) throw new Error("apiKey não encontrada");
         
-        if (window.confirm("O aplicativo será recarregado para aplicar a configuração de nuvem. Continuar?")) {
+        if (window.confirm("Configuração identificada com sucesso! O aplicativo será recarregado para conectar.")) {
             updateFirebaseConfig(config);
         }
     } catch (e) {
-        alert("Formato inválido! Certifique-se de copiar o objeto JSON corretamente do Firebase Console.");
+        console.error(e);
+        alert("Não foi possível ler a configuração. \n\nDica: Copie apenas o conteúdo dentro das chaves { ... } ou o bloco completo fornecido pelo Firebase Console.");
     }
   };
 
@@ -240,19 +264,19 @@ export const EditPanel: React.FC<EditPanelProps> = ({ currentData, onUpdate, isO
                     {!isFirebaseInitialized ? (
                         <>
                             <p className="text-xs text-stone-500 mb-3 leading-relaxed">
-                                Para sincronizar pedidos entre cozinha e garçom em dispositivos diferentes, cole a configuração do Firebase abaixo.
+                                Para sincronizar pedidos em tempo real, cole a configuração do Firebase abaixo.
                                 <br/><br/>
-                                1. Crie um projeto no <a href="https://console.firebase.google.com" target="_blank" className="text-brand-yellow hover:underline">Firebase Console</a>.
+                                1. Crie/Abra um projeto no <a href="https://console.firebase.google.com" target="_blank" className="text-brand-yellow hover:underline">Firebase Console</a>.
                                 <br/>
-                                2. Adicione um App Web.
+                                2. Vá em Configurações do Projeto {'>'} Geral.
                                 <br/>
-                                3. Copie o objeto <code>firebaseConfig</code> e cole aqui.
+                                3. Role até "Seus aplicativos" e copie o código <code>const firebaseConfig = ...</code>.
                             </p>
                             <div className="relative">
                                 <textarea
                                     value={cloudConfigInput}
                                     onChange={(e) => setCloudConfigInput(e.target.value)}
-                                    placeholder='{ "apiKey": "...", "authDomain": "..." }'
+                                    placeholder='Cole aqui o código copiado do Firebase...'
                                     className="w-full h-32 bg-black/30 border border-stone-600 rounded p-2 text-xs font-mono text-stone-300 focus:border-brand-yellow focus:outline-none resize-none"
                                 />
                                 <Database size={16} className="absolute right-3 top-3 text-stone-600 pointer-events-none" />
