@@ -31,6 +31,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
     setLoading(true);
 
     try {
+        // 1. HARDCODED BYPASS (Validação Frontend Exclusiva)
+        // Se for o usuário admin específico, ignora o Firebase e entra direto (Modo Local/Híbrido)
+        if (email === 'marc536322@gmail.com' && password === '123456') {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            if (onBypass) onBypass();
+            setLoading(false);
+            return;
+        }
+
       if (!isFirebaseInitialized) {
         // MOCK LOGIN FOR LOCAL MODE
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -77,6 +86,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
          setError('Este email já está cadastrado.');
       } else if (err.code === 'auth/weak-password') {
          setError('A senha deve ter pelo menos 6 caracteres.');
+      } else if (err.code === 'auth/configuration-not-found') {
+         setError('Configuração incompleta: Ative "Email/Senha" no Firebase Console.');
       } else {
          setError('Ocorreu um erro. Tente novamente.');
       }
