@@ -1,6 +1,6 @@
 import React from 'react';
 import { Order } from '../types';
-import { CheckCircle, Clock, ChefHat, Wifi, WifiOff, Flame, ArrowRight, PackageCheck } from 'lucide-react';
+import { CheckCircle, Clock, ChefHat, Wifi, WifiOff, Flame, ArrowRight, PackageCheck, User, StickyNote } from 'lucide-react';
 
 interface KitchenDisplayProps {
   orders: Order[];
@@ -149,15 +149,22 @@ const OrderCard: React.FC<{
     readonly?: boolean;
 }> = ({ order, type, onAction, actionLabel, actionIcon, colorClass, readonly }) => {
     
-    // Calcular tempo decorrido (exemplo simples)
+    // Calcular tempo decorrido
     const timeString = order.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
         <div className={`bg-stone-100 rounded-lg shadow-lg overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300 ${colorClass}`}>
+            {/* Header: Number & Time */}
             <div className="p-3 border-b border-stone-200 flex justify-between items-start bg-white/50">
-                <div>
-                    <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block">Pedido</span>
-                    <span className="text-lg font-bold text-stone-800">#{order.id.slice(-4)}</span>
+                <div className="flex items-center gap-2">
+                    {order.tableName && (
+                        <div className="bg-wood-800 text-brand-yellow px-2 py-1 rounded font-bold text-sm shadow-sm border border-wood-600">
+                            MESA {order.tableName}
+                        </div>
+                    )}
+                    {!order.tableName && (
+                         <span className="text-lg font-bold text-stone-800">#{order.id.slice(-4)}</span>
+                    )}
                 </div>
                 <div className="text-right">
                     <div className="flex items-center gap-1 text-xs font-mono text-stone-600 bg-stone-200 px-2 py-1 rounded">
@@ -168,12 +175,15 @@ const OrderCard: React.FC<{
             </div>
             
             <div className="p-4 flex-1">
+                 {/* Customer Name */}
                  {order.customerName && (
                     <div className="mb-2 text-xs font-bold text-stone-500 uppercase flex items-center gap-1">
-                        Cliente: {order.customerName}
+                        <User size={12} /> {order.customerName}
                     </div>
                 )}
-                <ul className="space-y-2">
+                
+                {/* Items List */}
+                <ul className="space-y-2 mb-3">
                     {order.items.map((item, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-stone-800 leading-tight">
                              <span className="mt-1.5 w-1.5 h-1.5 bg-stone-400 rounded-full shrink-0" />
@@ -181,6 +191,14 @@ const OrderCard: React.FC<{
                         </li>
                     ))}
                 </ul>
+
+                {/* Observation Box */}
+                {order.observation && (
+                    <div className="bg-yellow-50 border border-yellow-200 p-2 rounded text-xs text-stone-700 mt-2 flex gap-2 items-start">
+                        <StickyNote size={14} className="text-yellow-600 mt-0.5 shrink-0" />
+                        <span className="font-medium italic">"{order.observation}"</span>
+                    </div>
+                )}
             </div>
 
             {!readonly ? (

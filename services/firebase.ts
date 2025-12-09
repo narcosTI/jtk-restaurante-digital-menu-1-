@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, Auth } from "firebase/auth";
 
 // Chave para armazenar a configuração no LocalStorage
 const LOCAL_CONFIG_KEY = 'jtk_firebase_config';
@@ -28,9 +28,9 @@ const getStoredConfig = () => {
 
 const firebaseConfig = getStoredConfig();
 
-let db = null;
-let auth = null;
-let googleProvider = null;
+let db: Firestore | null = null;
+let auth: Auth | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
 let isFirebaseInitialized = false;
 
 try {

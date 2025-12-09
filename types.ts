@@ -14,6 +14,8 @@ export interface LoadingState {
 export interface Order {
   id: string;
   customerName: string;
+  tableName?: string; // Campo novo
+  observation?: string; // Campo novo
   items: string[];
   timestamp: Date;
   status: 'pending' | 'preparing' | 'completed';

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MenuData } from '../types';
-import { Phone, Share2, Utensils, CheckCircle, CheckSquare, Square, ChefHat, ArrowRight } from 'lucide-react';
+import { Phone, Share2, Utensils, CheckCircle, CheckSquare, Square, ChefHat, ClipboardList } from 'lucide-react';
 
 interface MenuDisplayProps {
   data: MenuData;
-  onPlaceOrder: (items: string[]) => void;
+  onPlaceOrder: (items: string[], tableName?: string, observation?: string) => void;
 }
 
 export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) => {
@@ -14,6 +14,10 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
     new Array(data.items.length).fill(true)
   );
   
+  // New States for Kitchen Details
+  const [tableNumber, setTableNumber] = useState('');
+  const [observation, setObservation] = useState('');
+
   // Status animation state: 'idle' -> 'sending' (animation) -> 'success' (feedback) -> 'idle'
   const [orderStatus, setOrderStatus] = useState<'idle' | 'sending' | 'success'>('idle');
 
@@ -54,15 +58,22 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
         return;
     }
 
-    // Notify the app (kitchen system)
-    onPlaceOrder(validItems);
+    // Notify the app (kitchen system) as well
+    onPlaceOrder(validItems, tableNumber, observation);
 
     // WhatsApp logic
-    const message = `*PEDIDO - ${data.restaurantName}*\n` +
+    let message = `*PEDIDO - ${data.restaurantName}*\n` +
       `*${data.title}*\n\n` +
+      (tableNumber ? `*Mesa: ${tableNumber}*\n` : '') +
       `*Itens do Pedido:*\n` +
       validItems.map(item => `✅ ${item}`).join('\n') +
-      `\n\n*Total: ${formattedPrice}*`;
+      `\n\n`;
+
+    if (observation) {
+        message += `*Obs:* ${observation}\n`;
+    }
+    
+    message += `*Total: ${formattedPrice}*`;
       
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodedMessage}`;
@@ -79,13 +90,19 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
         return;
     }
 
+    if (!tableNumber) {
+        if (!confirm("Enviar para a cozinha sem número de mesa?")) return;
+    }
+
     // 1. Start Animation Phase
     setOrderStatus('sending');
     
     // 2. Wait for animation to complete (1.5s), then place order and show success
     setTimeout(() => {
-        onPlaceOrder(validItems);
+        onPlaceOrder(validItems, tableNumber, observation);
         setOrderStatus('success');
+        setTableNumber('');
+        setObservation('');
         
         // 3. Reset after success message (2.5s)
         setTimeout(() => setOrderStatus('idle'), 2500);
@@ -114,7 +131,7 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-wood-800 rounded-xl overflow-hidden shadow-2xl border-4 border-wood-700 relative">
+    <div className="w-full max-w-md mx-auto bg-wood-800 rounded-xl overflow-hidden shadow-2xl border-4 border-wood-700 relative mb-6">
       <style>{`
         @keyframes fly-to-kitchen {
           0% { transform: translate(0, 0) scale(1); opacity: 1; }
@@ -174,7 +191,7 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
       </div>
 
       {/* Items List - Now Selectable and Editable */}
-      <div className="p-8 relative z-10">
+      <div className="p-8 pb-4 relative z-10">
         <div className="text-center mb-4">
              <span className="text-stone-400 text-xs uppercase tracking-widest flex items-center justify-center gap-2">
                 <CheckSquare size={12} /> Marque os itens desejados
@@ -216,7 +233,7 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
       </div>
 
       {/* Price Badge */}
-      <div className="relative z-10 flex justify-center -mt-6 mb-8">
+      <div className="relative z-10 flex justify-center -mt-2 mb-6">
         <div className="bg-brand-yellow text-wood-900 px-8 py-4 rounded-full transform rotate-2 shadow-lg border-4 border-white/20">
           <p className="text-sm font-bold uppercase text-center mb-1">Por Apenas</p>
           <p className="text-4xl font-display font-black">{formattedPrice}</p>
@@ -225,6 +242,41 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
 
       {/* Footer Actions */}
       <div className="bg-wood-900 p-4 relative z-10">
+        {/* Order Details: Table & Observations */}
+        <div className="bg-wood-800 rounded-lg p-3 mb-4 border border-wood-700">
+            <div className="flex gap-3 mb-2">
+                <div className="w-1/3">
+                    <label className="block text-stone-500 text-[10px] uppercase font-bold mb-1 ml-1">Mesa</label>
+                    <div className="relative">
+                        <select 
+                            value={tableNumber}
+                            onChange={(e) => setTableNumber(e.target.value)}
+                            className="w-full bg-wood-900 text-brand-yellow font-bold text-center border border-wood-600 rounded p-2 focus:border-brand-yellow focus:outline-none appearance-none"
+                        >
+                            <option value="">--</option>
+                            {[...Array(30)].map((_, i) => (
+                                <option key={i} value={i+1}>{i+1}</option>
+                            ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none text-stone-500 text-xs">▼</div>
+                    </div>
+                </div>
+                <div className="w-2/3">
+                    <label className="block text-stone-500 text-[10px] uppercase font-bold mb-1 ml-1">Observações</label>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={observation}
+                            onChange={(e) => setObservation(e.target.value)}
+                            placeholder="Ex: Sem cebola, bem passado..."
+                            className="w-full bg-wood-900 text-white border border-wood-600 rounded p-2 focus:border-brand-yellow focus:outline-none placeholder-stone-600"
+                        />
+                         <ClipboardList size={14} className="absolute right-2 top-3 text-stone-600 pointer-events-none" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div className="flex flex-col gap-3">
             {/* Primary Action: WhatsApp */}
             <button 

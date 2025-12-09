@@ -5,7 +5,7 @@ import { Phone, Utensils, Edit3, Check, Circle, CheckCircle } from 'lucide-react
 interface DessertDisplayProps {
   categories: DessertCategory[];
   phone: string;
-  onPlaceOrder: (items: string[]) => void;
+  onPlaceOrder: (items: string[], tableName?: string, observation?: string) => void;
 }
 
 export const DessertDisplay: React.FC<DessertDisplayProps> = ({ categories, phone, onPlaceOrder }) => {
@@ -64,7 +64,7 @@ export const DessertDisplay: React.FC<DessertDisplayProps> = ({ categories, phon
       alert("Selecione pelo menos um item para enviar para a cozinha.");
       return;
     }
-    onPlaceOrder(items);
+    onPlaceOrder(items, undefined, "Sobremesa");
     setSelectedKeys(new Set()); // Reset selection
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2500);
