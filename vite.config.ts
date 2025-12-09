@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     define: {
+      base: './',
       // Polyfill process.env for dependencies that expect it
       'process.env': JSON.stringify(env)
     },
