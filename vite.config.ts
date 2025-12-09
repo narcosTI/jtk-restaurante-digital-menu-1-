@@ -11,6 +11,9 @@ export default defineConfig(({ mode }) => {
     define: {
       // Polyfill process.env for dependencies that expect it
       'process.env': JSON.stringify(env)
+    },
+    build: {
+      chunkSizeWarningLimit: 1600,
     }
   };
 });
