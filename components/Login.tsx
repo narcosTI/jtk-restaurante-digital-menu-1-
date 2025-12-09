@@ -11,9 +11,10 @@ interface LoginProps {
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState(''); // For registration
+  // PRE-FILLED CREDENTIALS AS REQUESTED
+  const [email, setEmail] = useState('marc536322@gmail.com');
+  const [password, setPassword] = useState('123456');
+  const [name, setName] = useState('Admin'); // Default name for auto-reg
   
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,31 +28,50 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
       return;
     }
 
-    if (isRegistering && !name) {
-      setError('Por favor, informe seu nome.');
-      return;
-    }
-
     setLoading(true);
 
     try {
       if (!isFirebaseInitialized) {
         // MOCK LOGIN FOR LOCAL MODE
-        // Simulate a delay
         await new Promise(resolve => setTimeout(resolve, 800));
         if (onBypass) onBypass();
       } else {
-        // REAL FIREBASE LOGIN
+        // REAL FIREBASE LOGIN FLOW
         if (isRegistering) {
             await registerWithEmail(email, password, name);
         } else {
-            await loginWithEmail(email, password);
+            try {
+                // 1. Tenta fazer Login
+                await loginWithEmail(email, password);
+            } catch (loginError: any) {
+                // 2. Se falhar porque usuário não existe ou credencial inválida (comum em projetos novos),
+                // tenta CADASTRAR automaticamente para destravar o acesso do usuário.
+                console.log("Login falhou, tentando auto-cadastro...", loginError.code);
+                
+                if (loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/user-not-found' || loginError.code === 'auth/wrong-password') {
+                     // Tenta registrar
+                     try {
+                        await registerWithEmail(email, password, "Admin JTK");
+                        console.log("Auto-cadastro realizado com sucesso.");
+                     } catch (regError: any) {
+                        // Se falhar no cadastro (ex: email já existe mas a senha tá errada), joga o erro original
+                        if (regError.code === 'auth/email-already-in-use') {
+                            throw new Error("Senha incorreta.");
+                        }
+                        throw regError;
+                     }
+                } else {
+                    throw loginError;
+                }
+            }
         }
         if (onLoginSuccess) onLoginSuccess();
       }
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+      if (err.message === "Senha incorreta.") {
+         setError('A senha está incorreta para este e-mail.');
+      } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
          setError('Email ou senha incorretos.');
       } else if (err.code === 'auth/email-already-in-use') {
          setError('Este email já está cadastrado.');
@@ -160,7 +180,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
                         <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     ) : (
                         <>
-                            {isRegistering ? 'Cadastrar' : 'Entrar'} 
+                            {isRegistering ? 'Cadastrar' : 'Entrar Agora'} 
                             {!isRegistering && <ArrowRight size={18} />}
                         </>
                     )}
