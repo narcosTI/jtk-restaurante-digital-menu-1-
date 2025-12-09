@@ -14,7 +14,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
   // PRE-FILLED CREDENTIALS AS REQUESTED
   const [email, setEmail] = useState('marc536322@gmail.com');
   const [password, setPassword] = useState('123456');
-  const [name, setName] = useState('Admin'); // Default name for auto-reg
+  const [name, setName] = useState('Admin JTK');
   
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,21 +31,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
     setLoading(true);
 
     try {
-        // 1. HARDCODED BYPASS (Validação Frontend Exclusiva)
-        // Se for o usuário admin específico, ignora o Firebase e entra direto (Modo Local/Híbrido)
-        if (email === 'marc536322@gmail.com' && password === '123456') {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            if (onBypass) onBypass();
-            setLoading(false);
-            return;
-        }
-
       if (!isFirebaseInitialized) {
-        // MOCK LOGIN FOR LOCAL MODE
+        // Se realmente não tiver chaves do Firebase configuradas, usa o modo local
         await new Promise(resolve => setTimeout(resolve, 800));
         if (onBypass) onBypass();
       } else {
-        // REAL FIREBASE LOGIN FLOW
+        // --- FLUXO REAL DE SINCRONIZAÇÃO (FIREBASE) ---
+        // Removemos o bypass manual. Agora tentamos autenticar de verdade.
+        
         if (isRegistering) {
             await registerWithEmail(email, password, name);
         } else {
@@ -53,20 +46,16 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
                 // 1. Tenta fazer Login
                 await loginWithEmail(email, password);
             } catch (loginError: any) {
-                // 2. Se falhar porque usuário não existe ou credencial inválida (comum em projetos novos),
-                // tenta CADASTRAR automaticamente para destravar o acesso do usuário.
-                console.log("Login falhou, tentando auto-cadastro...", loginError.code);
+                // 2. Lógica de Auto-Correção para conta nova
+                console.log("Login falhou, analisando motivo...", loginError.code);
                 
-                if (loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/user-not-found' || loginError.code === 'auth/wrong-password') {
-                     // Tenta registrar
+                // Se o usuário não existe, CRIAMOS ele automaticamente para que a sincronização funcione
+                if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential') {
                      try {
+                        console.log("Tentando auto-cadastro para habilitar sincronização...");
                         await registerWithEmail(email, password, "Admin JTK");
-                        console.log("Auto-cadastro realizado com sucesso.");
                      } catch (regError: any) {
-                        // Se falhar no cadastro (ex: email já existe mas a senha tá errada), joga o erro original
-                        if (regError.code === 'auth/email-already-in-use') {
-                            throw new Error("Senha incorreta.");
-                        }
+                        // Se der erro no cadastro também, relançamos o erro original
                         throw regError;
                      }
                 } else {
@@ -83,13 +72,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
       } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
          setError('Email ou senha incorretos.');
       } else if (err.code === 'auth/email-already-in-use') {
-         setError('Este email já está cadastrado.');
+         setError('Este email já existe. Tente logar ou use outra senha.');
       } else if (err.code === 'auth/weak-password') {
          setError('A senha deve ter pelo menos 6 caracteres.');
-      } else if (err.code === 'auth/configuration-not-found') {
-         setError('Configuração incompleta: Ative "Email/Senha" no Firebase Console.');
+      } else if (err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed') {
+         setError('⚠️ AÇÃO NECESSÁRIA: Ative "Email/Senha" no Firebase Console > Authentication.');
       } else {
-         setError('Ocorreu um erro. Tente novamente.');
+         setError('Erro ao conectar: ' + (err.message || 'Verifique sua conexão.'));
       }
     } finally {
       setLoading(false);
@@ -140,9 +129,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
         <div className="p-8">
             {/* Error Banner */}
             {error && (
-                <div className="bg-red-900/40 border border-red-500/50 text-red-200 p-3 rounded-lg mb-6 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-                    <AlertCircle size={16} className="shrink-0" />
-                    {error}
+                <div className="bg-red-900/40 border border-red-500/50 text-red-200 p-3 rounded-lg mb-6 text-sm flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span className="leading-tight">{error}</span>
                 </div>
             )}
 
@@ -191,7 +180,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
                         <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     ) : (
                         <>
-                            {isRegistering ? 'Cadastrar' : 'Entrar Agora'} 
+                            {isRegistering ? 'Cadastrar' : 'Entrar e Sincronizar'} 
                             {!isRegistering && <ArrowRight size={18} />}
                         </>
                     )}
