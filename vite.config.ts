@@ -7,9 +7,9 @@ export default defineConfig(({ mode }) => {
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '');
   return {
+    base: './',
     plugins: [react()],
     define: {
-      base: './',
       // Polyfill process.env for dependencies that expect it
       'process.env': JSON.stringify(env)
     },
