@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { MenuData } from '../types';
-import { Phone, Share2, Utensils, CheckCircle, CheckSquare, Square, ChefHat, ClipboardList } from 'lucide-react';
+import { Phone, Share2, Utensils, CheckCircle, CheckSquare, Square, ChefHat, ClipboardList, User } from 'lucide-react';
 
 interface MenuDisplayProps {
   data: MenuData;
   onPlaceOrder: (items: string[], tableName?: string, observation?: string) => void;
+  isWaiterMode?: boolean; // Prop para ativar modo garçom
 }
 
-export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) => {
+export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder, isWaiterMode = false }) => {
   // Local state for the customer's customized order
   const [orderItems, setOrderItems] = useState<string[]>(data.items);
   const [selectedItems, setSelectedItems] = useState<boolean[]>(
@@ -101,12 +102,20 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
     setTimeout(() => {
         onPlaceOrder(validItems, tableNumber, observation);
         setOrderStatus('success');
-        setTableNumber('');
-        setObservation('');
+        
+        // Reset fields for next order if waiter mode
+        if (isWaiterMode) {
+            // Keep selected items, just clear table/obs
+             setTableNumber('');
+             setObservation('');
+        } else {
+             setTableNumber('');
+             setObservation('');
+        }
         
         // 3. Reset after success message (2.5s)
-        setTimeout(() => setOrderStatus('idle'), 2500);
-    }, 1500);
+        setTimeout(() => setOrderStatus('idle'), 1500); // Faster reset in waiter mode
+    }, 1000);
   };
 
   const handleShareClick = async () => {
@@ -131,7 +140,7 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-wood-800 rounded-xl overflow-hidden shadow-2xl border-4 border-wood-700 relative mb-6">
+    <div className={`w-full max-w-md mx-auto bg-wood-800 rounded-xl overflow-hidden shadow-2xl border-4 border-wood-700 relative mb-6 ${isWaiterMode ? 'ring-4 ring-blue-500/50' : ''}`}>
       <style>{`
         @keyframes fly-to-kitchen {
           0% { transform: translate(0, 0) scale(1); opacity: 1; }
@@ -173,30 +182,45 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
             <div className="bg-white rounded-full p-4 mb-4 animate-bounce shadow-[0_0_30px_rgba(34,197,94,0.6)]">
                 <CheckCircle size={64} className="text-green-600" strokeWidth={3} />
             </div>
-            <h3 className="text-2xl font-bold text-white uppercase tracking-widest font-display animate-pulse">Recebido!</h3>
-            <p className="text-stone-300 mt-2 text-sm">O Chef já está preparando.</p>
+            <h3 className="text-2xl font-bold text-white uppercase tracking-widest font-display animate-pulse">
+                {isWaiterMode ? 'Enviado!' : 'Recebido!'}
+            </h3>
+            <p className="text-stone-300 mt-2 text-sm">
+                 {isWaiterMode ? 'Pronto para o próximo.' : 'O Chef já está preparando.'}
+            </p>
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-wood-900 p-6 text-center border-b-2 border-wood-700 relative z-10">
-        <div className="inline-block border-2 border-brand-yellow rounded-lg px-2 py-1 mb-2 transform -rotate-2">
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-b from-brand-yellow to-brand-orange uppercase tracking-wider drop-shadow-sm">
-            {data.restaurantName || "JTK Restaurante"}
-            </h1>
-        </div>
-        <h2 className="text-2xl font-bold text-white uppercase tracking-widest mt-2 font-display text-shadow">
-          {data.title || "Almoço de Hoje"}
-        </h2>
-      </div>
+      {!isWaiterMode ? (
+          <div className="bg-wood-900 p-6 text-center border-b-2 border-wood-700 relative z-10">
+            <div className="inline-block border-2 border-brand-yellow rounded-lg px-2 py-1 mb-2 transform -rotate-2">
+                <h1 className="text-4xl md:text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-b from-brand-yellow to-brand-orange uppercase tracking-wider drop-shadow-sm">
+                {data.restaurantName || "JTK Restaurante"}
+                </h1>
+            </div>
+            <h2 className="text-2xl font-bold text-white uppercase tracking-widest mt-2 font-display text-shadow">
+              {data.title || "Almoço de Hoje"}
+            </h2>
+          </div>
+      ) : (
+          <div className="bg-blue-900 p-3 text-center border-b border-blue-700 relative z-10 flex items-center justify-center gap-2">
+             <User size={20} className="text-white" />
+             <h2 className="text-xl font-bold text-white uppercase tracking-widest font-display">
+                Modo Garçom
+             </h2>
+          </div>
+      )}
 
       {/* Items List - Now Selectable and Editable */}
-      <div className="p-8 pb-4 relative z-10">
-        <div className="text-center mb-4">
-             <span className="text-stone-400 text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                <CheckSquare size={12} /> Marque os itens desejados
-             </span>
-        </div>
+      <div className={`relative z-10 ${isWaiterMode ? 'p-4' : 'p-8 pb-4'}`}>
+        {!isWaiterMode && (
+            <div className="text-center mb-4">
+                <span className="text-stone-400 text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                    <CheckSquare size={12} /> Marque os itens desejados
+                </span>
+            </div>
+        )}
         <div className="space-y-3">
           {orderItems.map((item, index) => (
             <div 
@@ -210,35 +234,34 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
                     className={`transition-all duration-300 flex-shrink-0 active:scale-90 ${
                         selectedItems[index] ? 'text-brand-yellow scale-100' : 'text-stone-600 hover:text-stone-500 scale-90'
                     }`}
-                    aria-label={selectedItems[index] ? "Desmarcar item" : "Marcar item"}
                 >
                     {selectedItems[index] ? <CheckSquare size={24} /> : <Square size={24} />}
                 </button>
-                <input
-                    type="text"
-                    value={item}
-                    onChange={(e) => handleItemChange(index, e.target.value)}
-                    disabled={!selectedItems[index]}
-                    className={`w-full bg-transparent text-lg md:text-xl font-medium uppercase tracking-wide border-b pb-1 focus:outline-none transition-all duration-300 ease-in-out
+                <div 
+                    onClick={() => toggleSelection(index)}
+                    className={`cursor-pointer flex-1 text-lg font-medium uppercase tracking-wide transition-all duration-300 ease-in-out
                         ${selectedItems[index]
-                            ? 'text-stone-200 border-wood-700 focus:border-brand-yellow focus:text-brand-yellow placeholder-stone-600/50'
-                            : 'text-stone-600 border-wood-800 line-through decoration-stone-600 decoration-2 italic'
+                            ? 'text-stone-200'
+                            : 'text-stone-600 line-through decoration-stone-600 decoration-2 italic'
                         }
                     `}
-                    placeholder="(Item removido)"
-                />
+                >
+                    {item}
+                </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Price Badge */}
-      <div className="relative z-10 flex justify-center -mt-2 mb-6">
-        <div className="bg-brand-yellow text-wood-900 px-8 py-4 rounded-full transform rotate-2 shadow-lg border-4 border-white/20">
-          <p className="text-sm font-bold uppercase text-center mb-1">Por Apenas</p>
-          <p className="text-4xl font-display font-black">{formattedPrice}</p>
-        </div>
-      </div>
+      {/* Price Badge (Hidden in Waiter Mode to save space) */}
+      {!isWaiterMode && (
+          <div className="relative z-10 flex justify-center -mt-2 mb-6">
+            <div className="bg-brand-yellow text-wood-900 px-8 py-4 rounded-full transform rotate-2 shadow-lg border-4 border-white/20">
+              <p className="text-sm font-bold uppercase text-center mb-1">Por Apenas</p>
+              <p className="text-4xl font-display font-black">{formattedPrice}</p>
+            </div>
+          </div>
+      )}
 
       {/* Footer Actions */}
       <div className="bg-wood-900 p-4 relative z-10">
@@ -268,7 +291,7 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
                             type="text"
                             value={observation}
                             onChange={(e) => setObservation(e.target.value)}
-                            placeholder="Ex: Sem cebola, bem passado..."
+                            placeholder="Ex: Sem cebola..."
                             className="w-full bg-wood-900 text-white border border-wood-600 rounded p-2 focus:border-brand-yellow focus:outline-none placeholder-stone-600"
                         />
                          <ClipboardList size={14} className="absolute right-2 top-3 text-stone-600 pointer-events-none" />
@@ -278,40 +301,41 @@ export const MenuDisplay: React.FC<MenuDisplayProps> = ({ data, onPlaceOrder }) 
         </div>
 
         <div className="flex flex-col gap-3">
-            {/* Primary Action: WhatsApp */}
+            {/* Primary Action: Kitchen (Priority for Waiter) */}
             <button 
-                onClick={handleWhatsAppOrder}
+                onClick={handleKitchenOrder}
                 disabled={orderStatus !== 'idle'}
-                className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full py-4 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed
+                    ${isWaiterMode ? 'bg-blue-600 hover:bg-blue-500 text-white order-first' : 'bg-brand-orange hover:bg-orange-500 text-wood-900'}
+                `}
             >
-                <Phone size={20} />
-                Pedir no WhatsApp
+                <Utensils size={24} />
+                {isWaiterMode ? 'Lançar Pedido' : 'Enviar p/ Cozinha'}
             </button>
 
-            {/* Secondary Actions: Kitchen & Share */}
+            {/* Secondary Actions */}
             <div className="flex gap-3">
                 <button 
-                    onClick={handleKitchenOrder}
+                    onClick={handleWhatsAppOrder}
                     disabled={orderStatus !== 'idle'}
-                    className="flex-1 bg-brand-orange hover:bg-orange-500 text-wood-900 py-3 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                 >
-                    <Utensils size={20} />
-                    Enviar p/ Cozinha
+                    <Phone size={18} />
+                    WhatsApp
                 </button>
-                <button 
-                    onClick={handleShareClick}
-                    disabled={orderStatus !== 'idle'}
-                    className="bg-wood-700 hover:bg-wood-600 text-brand-yellow px-5 rounded-lg font-bold transition-colors shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label="Compartilhar"
-                >
-                    <Share2 size={20} />
-                </button>
+                
+                {!isWaiterMode && (
+                    <button 
+                        onClick={handleShareClick}
+                        disabled={orderStatus !== 'idle'}
+                        className="bg-wood-700 hover:bg-wood-600 text-brand-yellow px-4 rounded-lg font-bold transition-colors shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Compartilhar"
+                    >
+                        <Share2 size={20} />
+                    </button>
+                )}
             </div>
         </div>
-        
-        <p className="text-center text-stone-500 text-sm mt-4">
-            {data.phone}
-        </p>
       </div>
     </div>
   );
