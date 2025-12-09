@@ -3,16 +3,14 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Carrega as variáveis de ambiente do diretório atual
-  // O terceiro argumento '' garante que carregue todas as vars, não apenas as com prefixo VITE_
+  // Carrega variáveis de ambiente
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [react()],
     define: {
-      // Define 'process.env' globalmente no navegador para evitar "ReferenceError: process is not defined"
-      // Isso permite usar process.env.API_KEY no código do front-end
-      'process.env': env
+      // IMPORTANTE: JSON.stringify é necessário para que o objeto seja inserido como código válido
+      'process.env': JSON.stringify(env)
     }
   }
 })

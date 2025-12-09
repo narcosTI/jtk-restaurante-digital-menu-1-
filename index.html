@@ -6,7 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JTK Restaurante - Cardápio Digital</title>
     
-    <!-- Tailwind CSS via CDN is fine for quick styling, though postcss/npm is better for prod -->
+    <!-- Polyfill essencial para evitar 'process is not defined' -->
+    <script>
+      window.process = window.process || { env: {} };
+    </script>
+    
+    <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto:wght@400;500;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
@@ -39,7 +44,6 @@
         }
       }
     </script>
-    <!-- Importmap removed: Vite handles imports via package.json bundling -->
   <script type="importmap">
 {
   "imports": {
