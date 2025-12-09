@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, User, Lock, AlertCircle, ChefHat, Mail, UserPlus, ArrowRight } from 'lucide-react';
+import { LogIn, User, Lock, AlertCircle, ChefHat, Mail, UserPlus, ArrowRight, ExternalLink } from 'lucide-react';
 import { loginWithEmail, loginWithGoogle, registerWithEmail } from '../services/authService';
 import { isFirebaseInitialized } from '../services/firebase';
 
@@ -17,11 +17,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
   const [name, setName] = useState('Admin JTK');
   
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState(''); // To track specific error types
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setErrorCode('');
 
     if (!email || !password) {
       setError('Preencha todos os campos obrigatórios.');
@@ -67,6 +69,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
       }
     } catch (err: any) {
       console.error(err);
+      setErrorCode(err.code || '');
+      
       if (err.message === "Senha incorreta.") {
          setError('A senha está incorreta para este e-mail.');
       } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
@@ -76,7 +80,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
       } else if (err.code === 'auth/weak-password') {
          setError('A senha deve ter pelo menos 6 caracteres.');
       } else if (err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed') {
-         setError('⚠️ AÇÃO NECESSÁRIA: Ative "Email/Senha" no Firebase Console > Authentication.');
+         setError('AÇÃO NECESSÁRIA: O login por Email/Senha está desativado no Firebase.');
       } else {
          setError('Erro ao conectar: ' + (err.message || 'Verifique sua conexão.'));
       }
@@ -92,10 +96,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
     }
     setLoading(true);
     setError('');
+    setErrorCode('');
+    
     try {
       await loginWithGoogle();
       if (onLoginSuccess) onLoginSuccess();
-    } catch (err) {
+    } catch (err: any) {
+      setErrorCode(err.code || '');
       setError('Erro ao conectar com Google.');
     } finally {
       setLoading(false);
@@ -129,9 +136,23 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
         <div className="p-8">
             {/* Error Banner */}
             {error && (
-                <div className="bg-red-900/40 border border-red-500/50 text-red-200 p-3 rounded-lg mb-6 text-sm flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
-                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                    <span className="leading-tight">{error}</span>
+                <div className="bg-red-900/40 border border-red-500/50 text-red-200 p-4 rounded-lg mb-6 text-sm animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-start gap-2">
+                        <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                        <span className="leading-tight font-bold">{error}</span>
+                    </div>
+                    
+                    {/* Link de Ação para corrigir configuração no Firebase */}
+                    {(errorCode === 'auth/configuration-not-found' || errorCode === 'auth/operation-not-allowed') && (
+                        <a 
+                            href="https://console.firebase.google.com/project/_/authentication/providers" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="mt-3 inline-flex items-center gap-2 bg-red-800 hover:bg-red-700 text-white px-3 py-2 rounded text-xs font-bold uppercase transition-colors"
+                        >
+                            Ativar no Console <ExternalLink size={12} />
+                        </a>
+                    )}
                 </div>
             )}
 
