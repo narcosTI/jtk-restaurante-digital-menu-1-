@@ -2,20 +2,21 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, Auth } from "firebase/auth";
 
-// Chave para armazenar a configuração no LocalStorage
+// Chave para armazenar a configuração no LocalStorage (caso o usuário queira sobrescrever)
 const LOCAL_CONFIG_KEY = 'jtk_firebase_config';
 
-// Configuração padrão (Placeholder)
+// Configuração padrão com as chaves do projeto JTK Restaurante
 const defaultFirebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
-  authDomain: "seu-projeto.firebaseapp.com",
-  projectId: "seu-projeto-id",
-  storageBucket: "seu-projeto.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123def456"
+  apiKey: "AIzaSyCunzsjy4mJDLXweUBPlKlZabq6g_2N9DA",
+  authDomain: "jtk-restaurante-digital-menu-1.firebaseapp.com",
+  projectId: "jtk-restaurante-digital-menu-1",
+  storageBucket: "jtk-restaurante-digital-menu-1.firebasestorage.app",
+  messagingSenderId: "589206142134",
+  appId: "1:589206142134:web:87af7e2ef447f34b107a17",
+  measurementId: "G-CH4D8C9NRG"
 };
 
-// Tenta carregar a configuração salva no dispositivo
+// Tenta carregar a configuração salva no dispositivo, senão usa a padrão
 const getStoredConfig = () => {
     try {
         const stored = localStorage.getItem(LOCAL_CONFIG_KEY);
@@ -34,8 +35,8 @@ let googleProvider: GoogleAuthProvider | null = null;
 let isFirebaseInitialized = false;
 
 try {
-  // Verifica se a configuração é válida (se a API Key foi alterada do padrão)
-  if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "SUA_API_KEY_AQUI") {
+  // Inicializa o Firebase se a configuração existir
+  if (firebaseConfig.apiKey) {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
@@ -43,15 +44,17 @@ try {
     isFirebaseInitialized = true;
     console.log("🔥 Firebase conectado! Modo Online ativado.");
   } else {
-    console.warn("⚠️ Firebase não configurado. O app rodará em Modo Local (Offline).");
-    console.warn("Para conectar dispositivos, configure as chaves no painel de Configurações do App.");
+    console.warn("⚠️ Firebase não configurado corretamente.");
   }
 } catch (error) {
   console.error("Erro ao conectar no Firebase. Verifique sua configuração:", error);
-  // Se a configuração for inválida, reseta para evitar crash eterno
-  if (confirm("A configuração do Firebase parece inválida. Deseja resetar para o modo Local?")) {
-      localStorage.removeItem(LOCAL_CONFIG_KEY);
-      window.location.reload();
+  // Se a configuração carregada do localStorage estiver corrompida, oferece reset
+  const hasLocalConfig = localStorage.getItem(LOCAL_CONFIG_KEY);
+  if (hasLocalConfig) {
+      if (confirm("A configuração salva do Firebase parece inválida. Deseja resetar para a configuração padrão?")) {
+          localStorage.removeItem(LOCAL_CONFIG_KEY);
+          window.location.reload();
+      }
   }
 }
 
