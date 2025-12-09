@@ -1,13 +1,26 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { MenuData } from "../types";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Safe Initialization
+let ai: GoogleGenAI | null = null;
+try {
+  if (process.env.API_KEY) {
+    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  } else {
+    console.warn("Gemini API Key is missing. AI features will be disabled.");
+  }
+} catch (error) {
+  console.error("Failed to initialize Gemini Client:", error);
+}
 
 /**
  * Extracts menu information from an image using Gemini 2.5 Flash.
  */
 export const extractMenuFromImage = async (base64Image: string): Promise<MenuData> => {
+  if (!ai) {
+    throw new Error("Gemini API is not configured (Missing API Key).");
+  }
+
   const model = "gemini-2.5-flash";
 
   const prompt = `

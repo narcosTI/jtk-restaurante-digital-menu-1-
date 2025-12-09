@@ -41,7 +41,7 @@
     </script>
     <script>
       // Shim simples para garantir que bibliotecas que acessam process.env não quebrem no navegador
-      window.process = { env: {} };
+      window.process = window.process || { env: {} };
     </script>
 <script type="importmap">
 {
