@@ -1,6 +1,6 @@
 import React from 'react';
 import { Order } from '../types';
-import { CheckCircle, Clock, ChefHat, Wifi, WifiOff, Flame, ArrowRight, PackageCheck, User, StickyNote } from 'lucide-react';
+import { CheckCircle, Clock, ChefHat, Wifi, WifiOff, Flame, PackageCheck, User, StickyNote } from 'lucide-react';
 
 interface KitchenDisplayProps {
   orders: Order[];
@@ -22,9 +22,19 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ orders, onUpdate
   const recentCompleted = completedOrders.slice(0, 10);
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto p-4 flex flex-col h-[calc(100vh-100px)]">
+    <div className="w-full max-w-[99%] mx-auto p-2 flex flex-col h-[calc(100vh-80px)]">
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+
       {/* Header */}
-      <div className="flex justify-between items-center mb-6 shrink-0">
+      <div className="flex justify-between items-center mb-4 shrink-0">
         <div className="flex items-center gap-3">
             <div className="bg-brand-orange p-3 rounded-full text-wood-900 shadow-lg">
                 <ChefHat size={32} />
@@ -41,7 +51,7 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ orders, onUpdate
       </div>
 
       {/* Kanban Board */}
-      <div className="flex flex-col lg:flex-row gap-6 h-full overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-4 h-full overflow-hidden">
         
         {/* Column 1: Pendentes */}
         <OrderColumn 
@@ -132,7 +142,8 @@ const OrderColumn: React.FC<{ title: string; count: number; children: React.Reac
                     {count}
                 </span>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+            {/* Added no-scrollbar class here */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar">
                 {children}
             </div>
         </div>
@@ -153,7 +164,8 @@ const OrderCard: React.FC<{
     const timeString = order.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
-        <div className={`bg-stone-100 rounded-lg shadow-lg overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300 ${colorClass}`}>
+        // Removed animation classes: animate-in, fade-in, slide-in-from-bottom-2, duration-300
+        <div className={`bg-stone-100 rounded-lg shadow-lg overflow-hidden flex flex-col ${colorClass}`}>
             {/* Header: Number & Time */}
             <div className="p-3 border-b border-stone-200 flex justify-between items-start bg-white/50">
                 <div className="flex items-center gap-2">
