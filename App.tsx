@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MenuDisplay } from './components/MenuDisplay';
 import { EditPanel } from './components/EditPanel';
@@ -9,7 +10,7 @@ import { MenuData, Order, DessertCategory } from './types';
 import { Settings, ChefHat, ArrowLeft, Utensils, IceCream, LogOut, Users, Link2, Monitor, Smartphone, ClipboardCheck } from 'lucide-react';
 import { subscribeToOrders, addOrder, updateOrderStatus } from './services/orderService';
 import { isFirebaseInitialized } from './services/firebase';
-import { subscribeToAuth, logout } from './services/authService';
+import { subscribeToAuth, logout, loginWithEmail } from './services/authService';
 import { User } from 'firebase/auth';
 
 // Initial state derived from the provided image
@@ -132,12 +133,21 @@ function App() {
     localStorage.setItem('jtk_menu_data', JSON.stringify(menuData));
   }, [menuData]);
 
-  // Subscribe to Auth
+  // Subscribe to Auth & AUTO-LOGIN SYSTEM
   useEffect(() => {
     if (isFirebaseInitialized) {
         const unsubscribe = subscribeToAuth((currentUser) => {
             setUser(currentUser);
             setAuthLoading(false);
+
+            // AUTO-LOGIN: Se não houver usuário logado, loga silenciosamente com a conta admin
+            // Isso garante que dispositivos novos tenham permissão de escrita no DB
+            if (!currentUser) {
+                console.log("Iniciando auto-login para garantir permissões...");
+                loginWithEmail('marc536322@gmail.com', '123456')
+                    .then(() => console.log("Auto-login realizado com sucesso."))
+                    .catch((err) => console.warn("Auto-login falhou (pode ser necessário criar a conta primeiro):", err));
+            }
         });
         return () => unsubscribe();
     } else {
@@ -147,16 +157,13 @@ function App() {
 
   // Subscribe to real-time orders
   useEffect(() => {
-    // Allows subscription if user is logged in OR if in local/bypass mode
-    if (!user && !isLocalAuth) return;
-
     const unsubscribe = subscribeToOrders((updatedOrders) => {
         setOrders(updatedOrders);
     });
     return () => {
         if (typeof unsubscribe === 'function') unsubscribe();
     };
-  }, [user, isLocalAuth]);
+  }, [user, isLocalAuth]); // Re-subscribe if auth changes
 
   const handlePlaceOrder = (items: string[], tableName?: string, observation?: string) => {
     const newOrder = {
@@ -168,7 +175,10 @@ function App() {
       status: 'pending' as const
     };
     
-    addOrder(newOrder).catch(err => console.error("Error adding order", err));
+    addOrder(newOrder).catch(err => {
+        console.error("Error adding order", err);
+        alert("Erro ao enviar pedido. Verifique a conexão.");
+    });
   };
 
   const handleUpdateStatus = (orderId: string, status: Order['status']) => {
@@ -179,7 +189,6 @@ function App() {
     if (isFirebaseInitialized && user) {
         logout();
     } else {
-        // In "No Login Screen" mode, logging out just refreshes or stays in guest mode
         setIsLocalAuth(true); 
         alert("Modo Local reiniciado.");
     }
@@ -192,7 +201,7 @@ function App() {
   };
 
   if (authLoading) {
-    return <div className="min-h-screen bg-wood-900 flex items-center justify-center text-white">Carregando...</div>;
+    return <div className="min-h-screen bg-wood-900 flex items-center justify-center text-white font-bold animate-pulse">Conectando ao sistema...</div>;
   }
 
   // Calculate active orders
@@ -305,7 +314,7 @@ function App() {
         {!isFirebaseInitialized && (
             <div className="bg-red-900/80 border border-red-500 text-white text-center p-2 mb-4 rounded mx-auto max-w-md text-xs">
                 ⚠️ <b>Modo Offline.</b> Dispositivos não sincronizarão.
-                <br/>Configure o Firebase no ícone de Engrenagem {'>'} Nuvem.
+                <br/>Erro na configuração do banco de dados.
             </div>
         )}
 

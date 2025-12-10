@@ -1,12 +1,11 @@
+
 import { initializeApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, Auth } from "firebase/auth";
 
-// Chave para armazenar a configuração no LocalStorage (caso o usuário queira sobrescrever)
-const LOCAL_CONFIG_KEY = 'jtk_firebase_config';
-
-// Configuração padrão com as chaves do projeto JTK Restaurante
-const defaultFirebaseConfig = {
+// --- CONFIGURAÇÃO FORÇADA (PRODUÇÃO) ---
+// Removemos a leitura de localStorage para evitar que dispositivos fiquem "presos" em configurações antigas ou locais.
+const firebaseConfig = {
   apiKey: "AIzaSyCunzsjy4mJDLXweUBPlKlZabq6g_2N9DA",
   authDomain: "jtk-restaurante-digital-menu-1.firebaseapp.com",
   projectId: "jtk-restaurante-digital-menu-1",
@@ -16,57 +15,26 @@ const defaultFirebaseConfig = {
   measurementId: "G-CH4D8C9NRG"
 };
 
-// Tenta carregar a configuração salva no dispositivo, senão usa a padrão
-const getStoredConfig = () => {
-    try {
-        const stored = localStorage.getItem(LOCAL_CONFIG_KEY);
-        if (stored) return JSON.parse(stored);
-    } catch (e) {
-        console.error("Erro ao ler configuração local:", e);
-    }
-    return defaultFirebaseConfig;
-};
-
-const firebaseConfig = getStoredConfig();
-
 let db: Firestore | null = null;
 let auth: Auth | null = null;
 let googleProvider: GoogleAuthProvider | null = null;
 let isFirebaseInitialized = false;
 
 try {
-  // Inicializa o Firebase se a configuração existir
-  if (firebaseConfig.apiKey) {
-    const app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-    googleProvider = new GoogleAuthProvider();
-    isFirebaseInitialized = true;
-    console.log("🔥 Firebase conectado! Modo Online ativado.");
-  } else {
-    console.warn("⚠️ Firebase não configurado corretamente.");
-  }
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
+  isFirebaseInitialized = true;
+  console.log("🔥 Firebase conectado! Sincronização Ativa.");
 } catch (error) {
-  console.error("Erro ao conectar no Firebase. Verifique sua configuração:", error);
-  // Se a configuração carregada do localStorage estiver corrompida, oferece reset
-  const hasLocalConfig = localStorage.getItem(LOCAL_CONFIG_KEY);
-  if (hasLocalConfig) {
-      if (confirm("A configuração salva do Firebase parece inválida. Deseja resetar para a configuração padrão?")) {
-          localStorage.removeItem(LOCAL_CONFIG_KEY);
-          window.location.reload();
-      }
-  }
+  console.error("Erro CRÍTICO ao conectar no Firebase:", error);
 }
 
-/**
- * Salva a configuração do Firebase e recarrega a página para aplicar
- */
+// Função placeholder para manter compatibilidade, mas agora ela apenas recarrega a página
+// pois não permitimos mais sobrescrever a config via UI para evitar erros de sync.
 export const updateFirebaseConfig = (config: any) => {
-    if (!config) {
-        localStorage.removeItem(LOCAL_CONFIG_KEY);
-    } else {
-        localStorage.setItem(LOCAL_CONFIG_KEY, JSON.stringify(config));
-    }
+    localStorage.removeItem('jtk_firebase_config'); // Limpa qualquer lixo antigo
     window.location.reload();
 };
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { MenuData, LoadingState } from '../types';
 import { Camera, Edit3, X, Save, Trash2, Cloud, AlertTriangle, ChevronDown, ChevronUp, Database } from 'lucide-react';
@@ -15,9 +16,8 @@ export const EditPanel: React.FC<EditPanelProps> = ({ currentData, onUpdate, isO
   const [formData, setFormData] = useState<MenuData>(currentData);
   const [loading, setLoading] = useState<LoadingState>({ status: 'idle', message: '' });
   
-  // Cloud Config State
+  // Cloud Config State (Simplified)
   const [showCloudConfig, setShowCloudConfig] = useState(false);
-  const [cloudConfigInput, setCloudConfigInput] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -89,53 +89,6 @@ export const EditPanel: React.FC<EditPanelProps> = ({ currentData, onUpdate, isO
   const saveChanges = () => {
     onUpdate(formData);
     setIsOpen(false);
-  };
-
-  const handleSaveCloudConfig = () => {
-    if (!cloudConfigInput.trim()) {
-        alert("Cole o código de configuração.");
-        return;
-    }
-
-    let configString = cloudConfigInput.trim();
-    
-    // SMART PARSER: Tenta limpar o código JavaScript bruto para virar JSON válido
-    try {
-        // 1. Remove 'const firebaseConfig =' e ';' se houver
-        if (configString.includes('=')) {
-            configString = configString.split('=')[1].trim();
-        }
-        if (configString.endsWith(';')) {
-            configString = configString.slice(0, -1).trim();
-        }
-
-        // 2. Corrige chaves sem aspas (ex: apiKey: "..." -> "apiKey": "...")
-        // Regex procura por palavras seguidas de dois pontos e coloca aspas nelas
-        configString = configString.replace(/(\w+)\s*:/g, '"$1":');
-
-        // 3. Troca aspas simples por duplas
-        configString = configString.replace(/'/g, '"');
-
-        // 4. Remove vírgulas sobrando no final de objetos (JSON não aceita trailing commas)
-        configString = configString.replace(/,\s*}/g, '}');
-
-        const config = JSON.parse(configString);
-        
-        if (!config.apiKey) throw new Error("apiKey não encontrada");
-        
-        if (window.confirm("Configuração identificada com sucesso! O aplicativo será recarregado para conectar.")) {
-            updateFirebaseConfig(config);
-        }
-    } catch (e) {
-        console.error(e);
-        alert("Não foi possível ler a configuração. \n\nDica: Copie apenas o conteúdo dentro das chaves { ... } ou o bloco completo fornecido pelo Firebase Console.");
-    }
-  };
-
-  const handleResetCloudConfig = () => {
-      if (window.confirm("Deseja desconectar do Firebase e voltar ao modo Local?")) {
-          updateFirebaseConfig(null);
-      }
   };
 
   if (!isOpen) return null;
@@ -226,85 +179,4 @@ export const EditPanel: React.FC<EditPanelProps> = ({ currentData, onUpdate, isO
                         </button>
                         
                         {formData.items.length > 0 && (
-                            <button onClick={clearItems} className="text-xs text-red-500 hover:text-red-400 hover:underline flex items-center gap-1">
-                                <Trash2 size={12} /> Limpar Menu
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <button 
-                onClick={saveChanges}
-                className="w-full bg-brand-yellow text-wood-900 font-bold py-3 rounded mt-6 hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
-            >
-                <Save size={18} /> Salvar Alterações
-            </button>
-        </div>
-
-        {/* CLOUD CONFIG SECTION */}
-        <div className="border-t border-stone-700 pt-6 mt-8">
-            <button 
-                onClick={() => setShowCloudConfig(!showCloudConfig)}
-                className="w-full flex items-center justify-between text-stone-400 hover:text-white mb-4"
-            >
-                <span className="flex items-center gap-2 text-sm uppercase font-bold tracking-wider">
-                    <Cloud size={16} /> Sincronização Online (Firebase)
-                </span>
-                {showCloudConfig ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-
-            {showCloudConfig && (
-                <div className="bg-stone-800/50 rounded-lg p-4 animate-in slide-in-from-top-2">
-                    <div className="flex items-center gap-2 mb-3 text-xs text-stone-300">
-                        <div className={`w-2 h-2 rounded-full ${isFirebaseInitialized ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                        Status: <span className="font-bold">{isFirebaseInitialized ? 'CONECTADO' : 'OFFLINE (Local)'}</span>
-                    </div>
-
-                    {!isFirebaseInitialized ? (
-                        <>
-                            <p className="text-xs text-stone-500 mb-3 leading-relaxed">
-                                Para sincronizar pedidos em tempo real, cole a configuração do Firebase abaixo.
-                                <br/><br/>
-                                1. Crie/Abra um projeto no <a href="https://console.firebase.google.com" target="_blank" className="text-brand-yellow hover:underline">Firebase Console</a>.
-                                <br/>
-                                2. Vá em Configurações do Projeto {'>'} Geral.
-                                <br/>
-                                3. Role até "Seus aplicativos" e copie o código <code>const firebaseConfig = ...</code>.
-                            </p>
-                            <div className="relative">
-                                <textarea
-                                    value={cloudConfigInput}
-                                    onChange={(e) => setCloudConfigInput(e.target.value)}
-                                    placeholder='Cole aqui o código copiado do Firebase...'
-                                    className="w-full h-32 bg-black/30 border border-stone-600 rounded p-2 text-xs font-mono text-stone-300 focus:border-brand-yellow focus:outline-none resize-none"
-                                />
-                                <Database size={16} className="absolute right-3 top-3 text-stone-600 pointer-events-none" />
-                            </div>
-                            <button 
-                                onClick={handleSaveCloudConfig}
-                                className="w-full mt-3 bg-stone-700 hover:bg-stone-600 text-white text-xs font-bold py-2 rounded transition-colors"
-                            >
-                                Salvar e Conectar
-                            </button>
-                        </>
-                    ) : (
-                        <div className="text-center">
-                            <p className="text-xs text-green-400 mb-4 flex items-center justify-center gap-1">
-                                <Cloud size={14} /> Sistema operando na nuvem.
-                            </p>
-                            <button 
-                                onClick={handleResetCloudConfig}
-                                className="text-xs text-red-400 hover:text-red-300 underline"
-                            >
-                                Desconectar / Resetar Configuração
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-      </div>
-    </div>
-  );
-};
+                            <button onClick={clearItems} className="text-xs text-red-500 hover:text-red-400 hover:underline
