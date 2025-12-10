@@ -6,12 +6,12 @@ import { KitchenDisplay } from './components/KitchenDisplay';
 import { DessertDisplay } from './components/DessertDisplay';
 import { UserManagement } from './components/UserManagement';
 import { AdminDisplay } from './components/AdminDisplay';
+import { Login } from './components/Login';
 import { MenuData, Order, DessertCategory } from './types';
 import { Settings, ChefHat, ArrowLeft, Utensils, IceCream, LogOut, Users, Link2, Monitor, Smartphone, ClipboardCheck, AlertTriangle, ExternalLink, X } from 'lucide-react';
 import { subscribeToOrders, addOrder, updateOrderStatus } from './services/orderService';
 import { isFirebaseInitialized } from './services/firebase';
-import { subscribeToAuth, logout, loginWithEmail } from './services/authService';
-import { User } from 'firebase/auth';
+import { subscribeToAuth, logout } from './services/authService';
 
 // Initial state derived from the provided image
 const INITIAL_DATA: MenuData = {
@@ -93,9 +93,11 @@ function App() {
   const [orders, setOrders] = useState<Order[]>([]);
   
   // Auth State
-  const [user, setUser] = useState<User | null>(null);
-  // Default isLocalAuth to TRUE to bypass login screen initially
-  const [isLocalAuth, setIsLocalAuth] = useState(true);
+  // Using any because Firebase User type is unavailable
+  const [user, setUser] = useState<any | null>(null);
+  
+  // Estado inicial como FALSE para exibir a tela de login
+  const [isLocalAuth, setIsLocalAuth] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [firebaseConfigError, setFirebaseConfigError] = useState(false);
 
@@ -134,32 +136,13 @@ function App() {
     localStorage.setItem('jtk_menu_data', JSON.stringify(menuData));
   }, [menuData]);
 
-  // Subscribe to Auth & AUTO-LOGIN SYSTEM
+  // Subscribe to Auth
   useEffect(() => {
     if (isFirebaseInitialized) {
         const unsubscribe = subscribeToAuth((currentUser) => {
             setUser(currentUser);
             setAuthLoading(false);
-
-            // AUTO-LOGIN: Se não houver usuário logado, loga silenciosamente com a conta admin
-            // Isso garante que dispositivos novos tenham permissão de escrita no DB
-            if (!currentUser) {
-                console.log("Iniciando auto-login para garantir permissões...");
-                loginWithEmail('marcos536322@gmail.com', '123456')
-                    .then(() => {
-                        console.log("Auto-login realizado com sucesso.");
-                        setFirebaseConfigError(false);
-                    })
-                    .catch((err) => {
-                        console.warn("Auto-login falhou:", err);
-                        // Verifica se o erro é especificamente sobre o provedor desativado
-                        if (err.code === 'auth/operation-not-allowed') {
-                            setFirebaseConfigError(true);
-                        }
-                    });
-            } else {
-                setFirebaseConfigError(false);
-            }
+            setFirebaseConfigError(false);
         });
         return () => unsubscribe();
     } else {
@@ -169,13 +152,16 @@ function App() {
 
   // Subscribe to real-time orders
   useEffect(() => {
+    // Só conecta aos pedidos se estiver autenticado ou em modo local
+    if (!user && !isLocalAuth) return;
+
     const unsubscribe = subscribeToOrders((updatedOrders) => {
         setOrders(updatedOrders);
     });
     return () => {
         if (typeof unsubscribe === 'function') unsubscribe();
     };
-  }, [user, isLocalAuth]); // Re-subscribe if auth changes
+  }, [user, isLocalAuth]); 
 
   const handlePlaceOrder = (items: string[], tableName?: string, observation?: string) => {
     const newOrder = {
@@ -189,7 +175,11 @@ function App() {
     
     addOrder(newOrder).catch(err => {
         console.error("Error adding order", err);
-        alert("Erro ao enviar pedido. Verifique a conexão.");
+        if (err.code === 'permission-denied') {
+             alert("Sem permissão. Faça login novamente.");
+        } else {
+             alert("Erro ao enviar pedido. Verifique a conexão.");
+        }
     });
   };
 
@@ -201,8 +191,8 @@ function App() {
     if (isFirebaseInitialized && user) {
         logout();
     } else {
-        setIsLocalAuth(true); 
-        alert("Modo Local reiniciado.");
+        setIsLocalAuth(false); 
+        setUser(null);
     }
   };
 
@@ -214,6 +204,17 @@ function App() {
 
   if (authLoading) {
     return <div className="min-h-screen bg-wood-900 flex items-center justify-center text-white font-bold animate-pulse">Conectando ao sistema...</div>;
+  }
+
+  // TELA DE LOGIN (GUARD)
+  // Se não tem usuário e não está em modo local, mostra Login
+  if (!user && !isLocalAuth) {
+    return (
+        <Login 
+            onLoginSuccess={() => {}} // O useEffect do Auth já atualizará o estado 'user'
+            onBypass={() => setIsLocalAuth(true)}
+        />
+    );
   }
 
   // Calculate active orders
@@ -363,7 +364,7 @@ function App() {
             <button 
                 onClick={handleLogout}
                 className="text-stone-400 hover:text-red-400 transition-colors p-2 rounded-full hover:bg-stone-800"
-                title={user ? "Sair (Logout)" : "Modo Local"}
+                title={user ? "Sair (Logout)" : "Sair"}
             >
                 <LogOut size={20} />
             </button>
@@ -374,7 +375,7 @@ function App() {
         {!isFirebaseInitialized && (
             <div className="bg-red-900/80 border border-red-500 text-white text-center p-2 mb-4 rounded mx-auto max-w-md text-xs">
                 ⚠️ <b>Modo Offline.</b> Dispositivos não sincronizarão.
-                <br/>Erro na configuração do banco de dados.
+                <br/>Erro na configuração ou módulo do banco de dados ausente.
             </div>
         )}
 

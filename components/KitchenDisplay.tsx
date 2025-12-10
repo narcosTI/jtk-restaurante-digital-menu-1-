@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Order } from '../types';
 import { CheckCircle, Clock, ChefHat, Wifi, WifiOff, Flame, PackageCheck, User, StickyNote } from 'lucide-react';
@@ -22,7 +23,7 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ orders, onUpdate
   const recentCompleted = completedOrders.slice(0, 10);
 
   return (
-    <div className="w-full max-w-[99%] mx-auto p-2 flex flex-col h-[calc(100vh-80px)]">
+    <div className="w-full max-w-[99%] mx-auto p-2 flex flex-col lg:h-[calc(100vh-80px)] min-h-screen lg:min-h-0">
       <style>{`
         .no-scrollbar::-webkit-scrollbar {
           display: none;
@@ -34,14 +35,14 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ orders, onUpdate
       `}</style>
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-4 shrink-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 shrink-0 gap-2">
         <div className="flex items-center gap-3">
             <div className="bg-brand-orange p-3 rounded-full text-wood-900 shadow-lg">
-                <ChefHat size={32} />
+                <ChefHat size={24} className="sm:w-8 sm:h-8" />
             </div>
             <div>
-                <h2 className="text-3xl font-display font-bold text-white uppercase tracking-wider">Cozinha</h2>
-                <p className="text-stone-400 text-sm">Monitor de Pedidos</p>
+                <h2 className="text-2xl sm:text-3xl font-display font-bold text-white uppercase tracking-wider">Cozinha</h2>
+                <p className="text-stone-400 text-xs sm:text-sm">Monitor de Pedidos</p>
             </div>
         </div>
         
@@ -51,7 +52,7 @@ export const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ orders, onUpdate
       </div>
 
       {/* Kanban Board */}
-      <div className="flex flex-col lg:flex-row gap-4 h-full overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 lg:overflow-hidden pb-8 lg:pb-0">
         
         {/* Column 1: Pendentes */}
         <OrderColumn 
@@ -132,8 +133,12 @@ const OrderColumn: React.FC<{ title: string; count: number; children: React.Reac
     };
 
     return (
-        <div className={`flex-1 flex flex-col min-w-[300px] rounded-xl border ${colorStyles[color]} overflow-hidden`}>
-            <div className={`p-4 flex items-center justify-between border-b ${color === 'red' ? 'border-red-900/30' : color === 'yellow' ? 'border-yellow-900/30' : 'border-green-900/30'} bg-black/20`}>
+        <div className={`
+            w-full lg:flex-1 flex flex-col 
+            lg:h-full h-[60vh] 
+            rounded-xl border ${colorStyles[color]} overflow-hidden
+        `}>
+            <div className={`p-4 flex items-center justify-between border-b ${color === 'red' ? 'border-red-900/30' : color === 'yellow' ? 'border-yellow-900/30' : 'border-green-900/30'} bg-black/20 shrink-0`}>
                 <div className="flex items-center gap-2 font-bold uppercase tracking-wider">
                     {icon}
                     <span className={color === 'red' ? 'text-red-200' : color === 'yellow' ? 'text-yellow-200' : 'text-green-200'}>{title}</span>
@@ -165,7 +170,7 @@ const OrderCard: React.FC<{
 
     return (
         // Removed animation classes: animate-in, fade-in, slide-in-from-bottom-2, duration-300
-        <div className={`bg-stone-100 rounded-lg shadow-lg overflow-hidden flex flex-col ${colorClass}`}>
+        <div className={`bg-stone-100 rounded-lg shadow-lg overflow-hidden flex flex-col ${colorClass} shrink-0`}>
             {/* Header: Number & Time */}
             <div className="p-3 border-b border-stone-200 flex justify-between items-start bg-white/50">
                 <div className="flex items-center gap-2">
