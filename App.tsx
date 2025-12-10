@@ -5,7 +5,6 @@ import { KitchenDisplay } from './components/KitchenDisplay';
 import { DessertDisplay } from './components/DessertDisplay';
 import { UserManagement } from './components/UserManagement';
 import { AdminDisplay } from './components/AdminDisplay';
-import { Login } from './components/Login';
 import { MenuData, Order, DessertCategory } from './types';
 import { Settings, ChefHat, ArrowLeft, Utensils, IceCream, LogOut, Users, Link2, Monitor, Smartphone, ClipboardCheck } from 'lucide-react';
 import { subscribeToOrders, addOrder, updateOrderStatus } from './services/orderService';
@@ -94,7 +93,8 @@ function App() {
   
   // Auth State
   const [user, setUser] = useState<User | null>(null);
-  const [isLocalAuth, setIsLocalAuth] = useState(false);
+  // Default isLocalAuth to TRUE to bypass login screen initially
+  const [isLocalAuth, setIsLocalAuth] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
 
   // ROUTING: Listen to URL Hash changes to switch views automatically (e.g., #kitchen, #waiter)
@@ -147,6 +147,7 @@ function App() {
 
   // Subscribe to real-time orders
   useEffect(() => {
+    // Allows subscription if user is logged in OR if in local/bypass mode
     if (!user && !isLocalAuth) return;
 
     const unsubscribe = subscribeToOrders((updatedOrders) => {
@@ -178,7 +179,9 @@ function App() {
     if (isFirebaseInitialized && user) {
         logout();
     } else {
-        setIsLocalAuth(false);
+        // In "No Login Screen" mode, logging out just refreshes or stays in guest mode
+        setIsLocalAuth(true); 
+        alert("Modo Local reiniciado.");
     }
   };
 
@@ -190,11 +193,6 @@ function App() {
 
   if (authLoading) {
     return <div className="min-h-screen bg-wood-900 flex items-center justify-center text-white">Carregando...</div>;
-  }
-
-  // Show Login Screen if not authenticated
-  if (!user && !isLocalAuth) {
-    return <Login onBypass={() => setIsLocalAuth(true)} />;
   }
 
   // Calculate active orders
@@ -296,7 +294,7 @@ function App() {
             <button 
                 onClick={handleLogout}
                 className="text-stone-400 hover:text-red-400 transition-colors p-2 rounded-full hover:bg-stone-800"
-                title="Sair"
+                title={user ? "Sair (Logout)" : "Modo Local"}
             >
                 <LogOut size={20} />
             </button>
@@ -402,7 +400,7 @@ function App() {
         <footer className="text-center py-8 text-stone-600 text-sm relative z-10">
             <p>© {new Date().getFullYear()} JTK Restaurante</p>
             <p className="text-xs mt-1">
-                {user ? `Logado como: ${user.email || user.displayName}` : 'Modo Local'}
+                {user ? `Logado como: ${user.email || user.displayName}` : 'Modo Público/Local'}
             </p>
         </footer>
       )}
