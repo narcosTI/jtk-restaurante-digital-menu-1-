@@ -179,4 +179,35 @@ export const EditPanel: React.FC<EditPanelProps> = ({ currentData, onUpdate, isO
                         </button>
                         
                         {formData.items.length > 0 && (
-                            <button onClick={clearItems} className="text-xs text-red-500 hover:text-red-400 hover:underline
+                            <button onClick={clearItems} className="text-xs text-red-500 hover:text-red-400 hover:underline flex items-center gap-1">
+                                <Trash2 size={12} /> Limpar Menu
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <button 
+                onClick={saveChanges}
+                className="w-full bg-brand-yellow text-wood-900 font-bold py-3 rounded mt-6 hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
+            >
+                <Save size={18} /> Salvar Alterações
+            </button>
+        </div>
+
+        {/* CLOUD CONFIG SECTION (VIEW ONLY STATUS) */}
+        <div className="border-t border-stone-700 pt-6 mt-8">
+             <div className="bg-stone-800/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-1 text-xs text-stone-300">
+                    <div className={`w-2 h-2 rounded-full ${isFirebaseInitialized ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    Status do Sistema: <span className="font-bold">{isFirebaseInitialized ? 'ONLINE (Sincronizado)' : 'OFFLINE'}</span>
+                </div>
+                <p className="text-[10px] text-stone-500">
+                    O aplicativo está configurado para sincronizar automaticamente com o servidor central JTK.
+                </p>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+};

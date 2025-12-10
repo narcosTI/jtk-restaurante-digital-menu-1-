@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { LogIn, User, Lock, AlertCircle, ChefHat, Mail, UserPlus, ArrowRight, ExternalLink } from 'lucide-react';
 import { loginWithEmail, loginWithGoogle, registerWithEmail } from '../services/authService';
@@ -12,7 +13,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBypass }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   
   // PRE-FILLED CREDENTIALS AS REQUESTED
-  const [email, setEmail] = useState('marc536322@gmail.com');
+  const [email, setEmail] = useState('marcos536322@gmail.com');
   const [password, setPassword] = useState('123456');
   const [name, setName] = useState('Admin JTK');
   

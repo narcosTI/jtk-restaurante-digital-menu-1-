@@ -7,7 +7,7 @@ import { DessertDisplay } from './components/DessertDisplay';
 import { UserManagement } from './components/UserManagement';
 import { AdminDisplay } from './components/AdminDisplay';
 import { MenuData, Order, DessertCategory } from './types';
-import { Settings, ChefHat, ArrowLeft, Utensils, IceCream, LogOut, Users, Link2, Monitor, Smartphone, ClipboardCheck } from 'lucide-react';
+import { Settings, ChefHat, ArrowLeft, Utensils, IceCream, LogOut, Users, Link2, Monitor, Smartphone, ClipboardCheck, AlertTriangle, ExternalLink, X } from 'lucide-react';
 import { subscribeToOrders, addOrder, updateOrderStatus } from './services/orderService';
 import { isFirebaseInitialized } from './services/firebase';
 import { subscribeToAuth, logout, loginWithEmail } from './services/authService';
@@ -97,6 +97,7 @@ function App() {
   // Default isLocalAuth to TRUE to bypass login screen initially
   const [isLocalAuth, setIsLocalAuth] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
+  const [firebaseConfigError, setFirebaseConfigError] = useState(false);
 
   // ROUTING: Listen to URL Hash changes to switch views automatically (e.g., #kitchen, #waiter)
   useEffect(() => {
@@ -144,9 +145,20 @@ function App() {
             // Isso garante que dispositivos novos tenham permissão de escrita no DB
             if (!currentUser) {
                 console.log("Iniciando auto-login para garantir permissões...");
-                loginWithEmail('marc536322@gmail.com', '123456')
-                    .then(() => console.log("Auto-login realizado com sucesso."))
-                    .catch((err) => console.warn("Auto-login falhou (pode ser necessário criar a conta primeiro):", err));
+                loginWithEmail('marcos536322@gmail.com', '123456')
+                    .then(() => {
+                        console.log("Auto-login realizado com sucesso.");
+                        setFirebaseConfigError(false);
+                    })
+                    .catch((err) => {
+                        console.warn("Auto-login falhou:", err);
+                        // Verifica se o erro é especificamente sobre o provedor desativado
+                        if (err.code === 'auth/operation-not-allowed') {
+                            setFirebaseConfigError(true);
+                        }
+                    });
+            } else {
+                setFirebaseConfigError(false);
             }
         });
         return () => unsubscribe();
@@ -216,6 +228,54 @@ function App() {
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }} 
       />
+
+      {/* CRITICAL CONFIGURATION ERROR MODAL */}
+      {firebaseConfigError && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl max-w-lg w-full p-8 shadow-2xl border-4 border-red-500 animate-in zoom-in-95 relative">
+                <button 
+                    onClick={() => setFirebaseConfigError(false)}
+                    className="absolute top-4 right-4 text-stone-400 hover:text-stone-800"
+                >
+                    <X size={24} />
+                </button>
+
+                <div className="flex flex-col items-center text-center">
+                    <div className="bg-red-100 p-4 rounded-full mb-4">
+                        <AlertTriangle size={48} className="text-red-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-red-600 mb-2 uppercase">Ação Necessária</h2>
+                    <p className="text-stone-800 font-bold mb-4">O login por Email/Senha está desativado no Firebase.</p>
+                    
+                    <div className="text-left bg-stone-100 p-4 rounded-lg mb-6 text-sm text-stone-700 space-y-2">
+                        <p>Para sincronizar dispositivos, ative esta opção:</p>
+                        <ol className="list-decimal list-inside space-y-1 font-medium">
+                            <li>Acesse o Console do Firebase (link abaixo).</li>
+                            <li>Vá em <b>Authentication</b> {'>'} <b>Sign-in method</b>.</li>
+                            <li>Clique em <b>Email/Password</b>.</li>
+                            <li>Marque a opção <b>Enable</b> e clique em <b>Save</b>.</li>
+                        </ol>
+                    </div>
+
+                    <a 
+                        href="https://console.firebase.google.com/project/_/authentication/providers" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 mb-3"
+                    >
+                        Abrir Console do Firebase <ExternalLink size={20} />
+                    </a>
+                    
+                    <button 
+                        onClick={() => setFirebaseConfigError(false)}
+                        className="w-full bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold py-3 rounded-lg"
+                    >
+                        Continuar no Modo Local (Offline)
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
 
       <nav className="p-4 flex justify-between items-center relative z-10 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">

@@ -11,8 +11,8 @@ const firebaseConfig = {
   projectId: "jtk-restaurante-digital-menu-1",
   storageBucket: "jtk-restaurante-digital-menu-1.firebasestorage.app",
   messagingSenderId: "589206142134",
-  appId: "1:589206142134:web:87af7e2ef447f34b107a17",
-  measurementId: "G-CH4D8C9NRG"
+  appId: "1:589206142134:web:ada00eaa16f9dff1107a17",
+  measurementId: "G-8VGTJLVN8E"
 };
 
 let db: Firestore | null = null;
